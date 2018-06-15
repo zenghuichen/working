@@ -151,7 +151,7 @@ def read_tfrecord(filename):
     label = tf.reshape(label, [1])
 
     image, label = tf.train.batch([image, label],
-            batch_size=16,
+            batch_size=32,
             capacity=800)
 
     return image, label    

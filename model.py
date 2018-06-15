@@ -36,14 +36,14 @@ from PIL import Image
 #the paremeter for read image and label
 #data_dir='/home/chen/data/data/cifar-100-binary'
 labelsnametxt='metatxt.txt'
-data_dir_py=r'E:\exampletrain\tf\train256.tf'
-odepth=3
-owidth=256
-oheight=256
+data_dir_py=r'E:\intelligentcity\example\tfrecord\train.tf'
+odepth=1
+owidth=32
+oheight=40
 labelbytes=2# 2 for CIFAR-100
 olabel=1
-Image_crop_h=256
-Image_crop_w=256
+Image_crop_h=40
+Image_crop_w=32
 NUM_EXAMPLE_TRAIN=1960
 NUM_EXAMPLE_EVAL=98
 MIN_FRACTION=0.1
@@ -52,8 +52,8 @@ min_queue_example=int(NUM_EXAMPLE_TRAIN*MIN_FRACTION)
 
 #-set the hyperparameter of model
 
-BATCH_SIZE=32
-NUM_CLASS=2
+BATCH_SIZE=64
+NUM_CLASS=90
 NUM_EXAMPLES_PER_EPOCH_FOR_TRIAN=NUM_EXAMPLE_TRAIN
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL=NUM_EXAMPLE_EVAL
 moving_avg_decay=0.999
@@ -62,7 +62,7 @@ learning_rate_decay_factor=0.0001 #学习率衰减因子
 num_epoch_per_decay=350.0 # 衰减成阶梯函数，控制衰减周期（阶梯宽度）
 TOWER_NAME='tower'
 # in variable
-Checkoutpointdir=r'E:\home\chen\文档\mygithub\mycode\cifar100\train'
+Checkoutpointdir=r'E:\intelligentcity\train'
 log_dir=r'E:\home\chen\文档\mygithub\mycode\cifar100\log'
 
 Max_step=1000000
@@ -75,120 +75,6 @@ def unpickle(file): # 用于读取cifar100-python
     with open(file, 'rb') as fo:
          dict = pickle.load(fo, encoding='bytes')
     return dict
-#------------read and reshape the image and labels---------------    
-def CreateImgeandlabel_train(file):
-    imlist=os.listdir(file)    
-    imagelabel=[]
-    
-    for data in imlist:
-        impath=os.path.join(file,data)
-        im=Image.open(impath)
-        img3=np.asarray(im,dtype=np.uint8)
-        #进行维度转换
-        h,w,c=img3.shape
-        imgarr=img3.reshape(h*w*c)
-        try:
-            if data.index('tree') >0 :
-                labelid=1
-        except Exception as e:
-                labelid=2
-        temp={}
-        temp['image']= np.array(imgarr,dtype=np.uint8)
-        temp['labelid']=np.array(labelid,dtype=np.uint8)
-        #temp['filename']=data
-        imagelabel.append(temp)
-    return imagelabel    
-def createimgandlabel_train(file,iseval=False):
-    if not iseval:
-        dicts=unpickle(data_dir_py+'/'+'train')
-    else:
-        dicts=unpickle(data_dir_py+'/'+'test')
-    data=dicts[b'data']
-    fine_labels=dicts[b'fine_labels']
-    # start create result
-    imagelabel=[]
-    i=0
-    while(i<len(data)):
-        temp={}
-        temp['image']=data[i]
-        temp['labelid']=np.array([fine_labels[i]],dtype=np.uint8)
-        imagelabel.append(temp)
-        i=i+1
-    return imagelabel
-def createlabelandname(file):
-    metedict=unpickle(data_dir_py+'/'+'meta')
-    meta_fine=metedict[b'fine_label_names']
-    ltemp={}
-    i=0
-    while i<len(meta_fine):
-        ltemp[i]=meta_fine[i].decode('utf-8')
-        i=i+1
-    return ltemp
-
-
-#------ deal with map the id of label and  name of label--------------
-def storelabelandname(file,labelsnametxt='metatxt.txt'):
-    # note: the method for store the map between id and labelname 
-    d=createlabelandname(file)
-    s=json.dumps(d)
-    meta_path=file+'/'+labelsnametxt
-    if tf.gfile.Exists(file):
-        tf.gfile.MkDir(file)
-    f=open(meta_path,'w')
-    f.write(s)
-    f.close()
-    return meta_path
-
-def loadlabelname(meta_path):  
-    # note: the method while make the variable that type is int to be the str 
-    #so, name=obj[str(id)]
-    f=open(meta_path,'r')
-    contents=f.read()
-    f.close()
-    obj=json.loads(contents)
-    return obj
-    
-#-----------------------generate the file of Image and label----------
-def makeexample(image,label):
-    example=tf.train.Example(features=tf.train.Features(feature={
-        'image':tf.train.Feature(bytes_list=tf.train.BytesList(value=[image])),
-        'label':tf.train.Feature(bytes_list=tf.train.BytesList(value=[label]))
-    }
-    ))
-    return example
-def write_TFRecord(img_lbs,filename):
-    if os.path.exists(filename):
-        os.remove(filename)
-    writer=tf.python_io.TFRecordWriter(filename)
-    for temp in img_lbs:
-        ex=makeexample(temp['image'].tobytes(),temp['labelid'].tobytes())
-        writer.write(ex.SerializeToString())
-    writer.close()
-    return filename
-
-def read_tfrecord(filename):
-    filename_queue = tf.train.string_input_producer([filename])
-    reader = tf.TFRecordReader()
-    _, serialized_example = reader.read(filename_queue)
-
-    features = tf.parse_single_example(
-        serialized_example,
-        features={
-            'image': tf.FixedLenFeature([], tf.string),
-            'label': tf.FixedLenFeature([], tf.string)
-        })
-
-    image = tf.decode_raw(features['image'], tf.uint8)
-    label = tf.decode_raw(features['label'],tf.uint8)
-
-    image = tf.reshape(image, [oheight, owidth, odepth])
-    label = tf.reshape(label, [olabel])
-
-    image, label = tf.train.batch([image, label],
-            batch_size=16,
-            capacity=500)
-
-    return image, label
 
 #------------------------------input image and labels------------------------
 def _createqueue(data_dir,iseval=False,ispy=True,readid=1):
@@ -215,32 +101,7 @@ def _createqueue(data_dir,iseval=False,ispy=True,readid=1):
     else:
         raise ValueError('no file need to add the file queue')
 
-def readimage_py(filename_queue):
-    class CIFAR100Record(object):
-        pass
-    
-    result=CIFAR100Record()
-    result.height = oheight
-    result.width = owidth
-    result.depth = odepth
-        
-    reader = tf.TFRecordReader()
-    result.key,value = reader.read(filename_queue)
-    features = tf.parse_single_example(
-        value,
-        features={
-            'image': tf.FixedLenFeature([], tf.string),
-            'label': tf.FixedLenFeature([], tf.string)
-        })
 
-    image = tf.decode_raw(features['image'], tf.uint8)
-    label = tf.decode_raw(features['label'], tf.uint8)
-    image = tf.reshape(image, [result.depth, result.height, result.width])
-    image=tf.transpose(image,[1,2,0])
-    label = tf.reshape(label, [1])
-    result.image=image
-    result.finelabel=label
-    return result
 
 def read_tfrecord_users(filename_queue):
     class CIFAR100Record(object):
@@ -268,38 +129,13 @@ def read_tfrecord_users(filename_queue):
     result.finelabel=label
     return result
 
-def readimage_binary(filename_queue):
-    class CIFAR100Record(object):
-        pass
-    
-    result=CIFAR100Record()
-    label_bytes = labelbytes 
-    result.height = oheight
-    result.width = owidth
-    result.depth = odepth
-    image_bytes = result.height * result.width * result.depth
-    
-    record_bytes=label_bytes+image_bytes
-    reader=tf.FixedLengthRecordReader(record_bytes)
-    result.key,value=reader.read(filename_queue)
-    record_bytes=tf.decode_raw(value,tf.uint8)
-    result.crosslabel=tf.cast(tf.strided_slice(record_bytes,[0],[1]),tf.int32)
-    result.finelabel=tf.cast(tf.strided_slice(record_bytes,[1],[label_bytes]),tf.int32)
-    uint8image=tf.strided_slice(record_bytes,[label_bytes],[label_bytes+image_bytes])
-    depth_major=tf.reshape(uint8image,[result.depth,result.height,result.width])
-    depth_major=tf.transpose(depth_major,[1,2,0])
-    result.image=depth_major
- #   result.image=tf.cast(tf.transpose(depth_major,[1,2,0]),tf.float32)
-    return result
+
 
 def distored_input(data_dir,shuffle=True,batch_size=128,iseval=False,ispy=True,readid=1,Num_process_thread=16):
     print(readid)
     filequeue=_createqueue(data_dir,iseval,ispy,readid)
     if readid==1: #为了兼容以前的代码
-        if ispy:
-            read_input=readimage_py(filequeue)
-        else:
-            read_input=readimage_binary(filequeue)
+        pass
     elif readid==2:
         read_input=read_tfrecord_users(filequeue)
     fimg=read_input.image
@@ -310,12 +146,12 @@ def distored_input(data_dir,shuffle=True,batch_size=128,iseval=False,ispy=True,r
     #  图片处理
 
         
-    fimg=tf.random_crop(fimg,[height,width,3])  #图片裁剪
+    fimg=tf.random_crop(fimg,[height,width,odepth])  #图片裁剪
     fimg=tf.image.flip_left_right(fimg) # lifi and right #图片左右反转
     fimg=tf.image.random_brightness(fimg,63)   # 随机亮度饱和
     fimg=tf.image.per_image_standardization(fimg)  #图片标准化
     #
-    fimg.set_shape([height,width,3])
+    fimg.set_shape([height,width,odepth])
     read_input.finelabel.set_shape([1])
     print('gilling queue with %d image ' % min_queue_example)
     if shuffle:
@@ -401,7 +237,7 @@ def inference(images):
     """
     # 卷积层1
     with tf.variable_scope('conv1') as scope:  # test 使用 get_variable代替variable() 方法
-        kernel=_variable_with_weight_decay('weights',shape=[5,5,3,64],stddv=0.05,wd=0.0) #卷积核
+        kernel=_variable_with_weight_decay('weights',shape=[5,5,odepth,64],stddv=0.05,wd=0.0) #卷积核
         conv=tf.nn.conv2d(images,kernel,[1,1,1,1],padding='SAME')  # 卷积函数
         biases=_variable_on_cpu('biases',[64],tf.constant_initializer(0.0)) # 偏置
         pre_activation=tf.nn.bias_add(conv,biases) # 生成激活函数
@@ -502,7 +338,7 @@ def model_train():
         logits=inference(images)#生成前向传播模型
         
         losses=loss(logits,labels) #计算损失值
-        print(str(losses))
+
         train_op=train(losses,global_step) #训练模型并更新参数
         #模型修剪  
         # Parse pruning hyperparameters
@@ -590,7 +426,8 @@ FLASS,unparsed = init_FLASS()
 def main(argv=None):
     FLASS, unparsed =init_FLASS()
     if tf.gfile.Exists(FLASS.train_dir):
-         tf.gfile.DeleteRecursively(FLASS.train_dir)
+        
+         tf.gfile.Rename
     tf.gfile.MakeDirs(FLASS.train_dir)
     model_train()
 
@@ -599,7 +436,11 @@ def main(argv=None):
 #---------------------system test---------------------------------
 def temp():
     pass
-    
+def getTimeName():
+    d=time.asctime()
+    t=str(d).replace(' ','').replace(':','')
+    return t
+   
 def logout(x):
     if not tf.gfile.Exists(log_dir):
         tf.gfile.MkDir(log_dir)
@@ -637,22 +478,11 @@ def test(x):
         return sess.run(x)     
 #------------------------------脚本程序的运行入口-----------------------------
 print('运行前，请检查参数列表的值是不是正确')
+main()
 def model_train_main():
    tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
    pass
 #--------generator test and train dataset--------------------------------
-def main_generateTFRecordset(data_dir_py):
-    # path
-    trainpath=data_dir_py+'/train.tf'
-    evalpath=data_dir_py+'/test.tf'
-    labelsnametxt='metatxt.txt'
-    # train
-    trainils=createimgandlabel_train(data_dir_py,iseval=False)
-    write_TFRecord(trainils,trainpath)
-    #eval data
-    evalils=createimgandlabel_train(data_dir_py,iseval=False)
-    write_TFRecord(evalils,evalpath)
-    #meta_txt
-    metadata=storelabelandname(data_dir_py)
+
  
-  
+
