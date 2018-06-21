@@ -93,8 +93,8 @@ def eval_once(saver,summary_writer,top_k_op,summary_op,images,logits,labels):
 
 def evaluate():
     with tf.Graph().as_default() as g:
-
-        images,labels=cifar10.model_image_input(Evaldata_dir,True,True,False,2,64)
+        
+        images,labels=cifar10.model_image_input(Evaldata_dir,True)
         logits=cifar10.inference(images)
         labels=tf.cast(labels,tf.int32)
         top_k_op =tf.nn.in_top_k(logits,labels,1)  #统计分类正确的结果类

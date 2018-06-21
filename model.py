@@ -36,7 +36,7 @@ from PIL import Image
 #the paremeter for read image and label
 #data_dir='/home/chen/data/data/cifar-100-binary'
 labelsnametxt='metatxt.txt'
-data_dir_py=r'E:\intelligentcity\example\tfrecord\train.tf'
+data_dir=r'E:\intelligentcity\example\tf_car_license_dataset\train_images\train-set'
 odepth=1
 owidth=32
 oheight=40
@@ -44,15 +44,15 @@ labelbytes=2# 2 for CIFAR-100
 olabel=1
 Image_crop_h=40
 Image_crop_w=32
-NUM_EXAMPLE_TRAIN=1960
+NUM_EXAMPLE_TRAIN=9519
 NUM_EXAMPLE_EVAL=98
-MIN_FRACTION=0.1
+MIN_FRACTION=1
 min_queue_example=int(NUM_EXAMPLE_TRAIN*MIN_FRACTION)
 
 
 #-set the hyperparameter of model
 
-BATCH_SIZE=64
+BATCH_SIZE=256
 NUM_CLASS=90
 NUM_EXAMPLES_PER_EPOCH_FOR_TRIAN=NUM_EXAMPLE_TRAIN
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL=NUM_EXAMPLE_EVAL
@@ -77,100 +77,80 @@ def unpickle(file): # 用于读取cifar100-python
     return dict
 
 #------------------------------input image and labels------------------------
-def _createqueue(data_dir,iseval=False,ispy=True,readid=1):
-    if readid==1:
-        if ispy:
-            trainpath='train.tf'
-            evalpath='test.tf'
+def _createqueue(data_dir):
+    filenames=[data_dir]
+    for f in filenames:
+        if tf.gfile.Exists(f):
+            continue
         else:
-            trainpath='train.bin'
-            evalpath='test.bin'
-        if not iseval:
-            filenames=[os.path.join(data_dir,trainpath)]# file for train
-        else:
-            filenames=[os.path.join(data_dir,evalpath)] # the file for test      
-    elif readid==2:
-        filenames=[data_dir]
-        
-    f=filenames[0]
-    print(f)
-    print(readid)
-    if tf.gfile.Exists(f):
-        filename_queue=tf.train.string_input_producer(filenames)    
-        return filename_queue
-    else:
-        raise ValueError('no file need to add the file queue')
+            print(f)
+            raise ValueError('no file need to add the file queue')
+    filename_queue=tf.train.string_input_producer(tf.train.match_filenames_once(data_dir+'/*.bmp'))
+    return filename_queue
 
-
-
+def parsename(k,gc=1):
+    k=tf.reshape(k,shape=[1])
+    d=tf.string_split(k,delimiter='\\')
+    d=d.values[-1]
+    d=tf.reshape(d,shape=[1])
+    d=tf.string_split(d,delimiter='.')
+    d=d.values[0]
+    d=tf.reshape(d,shape=[1])
+    d=tf.string_split(d,delimiter='_')
+    d=d.values[1]
+    return d
 def read_tfrecord_users(filename_queue):
     class CIFAR100Record(object):
         pass
     
     result=CIFAR100Record()
         
-    reader = tf.TFRecordReader()
-    _, serialized_example = reader.read(filename_queue)
-
-    features = tf.parse_single_example(
-        serialized_example,
-        features={
-            'image': tf.FixedLenFeature([], tf.string),
-            'label': tf.FixedLenFeature([], tf.string)
-        })
-
-    image = tf.decode_raw(features['image'], tf.uint8)
-    label = tf.decode_raw(features['label'],tf.uint8)
-
-    image = tf.reshape(image, [oheight, owidth, odepth])
-    label = tf.reshape(label, [olabel])
-
+    reader=tf.WholeFileReader()
+    k,v = reader.read(filename_queue)
+    k=parsename(k)
+    k=tf.string_to_number(k,tf.int32)
+    k=tf.cast(k,tf.uint8)
+    image = tf.image.decode_bmp(v)
+    label = tf.reshape(k, [olabel])
     result.image=image
     result.finelabel=label
     return result
 
 
 
-def distored_input(data_dir,shuffle=True,batch_size=128,iseval=False,ispy=True,readid=1,Num_process_thread=16):
-    print(readid)
-    filequeue=_createqueue(data_dir,iseval,ispy,readid)
-    if readid==1: #为了兼容以前的代码
-        pass
-    elif readid==2:
-        read_input=read_tfrecord_users(filequeue)
+def distored_input(data_dir,shuffle=True,Num_process_thread=16):
+    filequeue=_createqueue(data_dir)
+    read_input=read_tfrecord_users(filequeue)
     fimg=read_input.image
     fimg=tf.cast(fimg,tf.float32) 
     # the size of image croped
     height=Image_crop_h
     width=Image_crop_w
     #  图片处理
-
-        
+       
     fimg=tf.random_crop(fimg,[height,width,odepth])  #图片裁剪
-    fimg=tf.image.flip_left_right(fimg) # lifi and right #图片左右反转
     fimg=tf.image.random_brightness(fimg,63)   # 随机亮度饱和
     fimg=tf.image.per_image_standardization(fimg)  #图片标准化
-    #
     fimg.set_shape([height,width,odepth])
     read_input.finelabel.set_shape([1])
     print('gilling queue with %d image ' % min_queue_example)
     if shuffle:
         images,label=tf.train.shuffle_batch(
                 [fimg,read_input.finelabel],
-                batch_size=batch_size,
+                batch_size=BATCH_SIZE,
                 num_threads=Num_process_thread,
-                capacity=min_queue_example+3*batch_size,
-                min_after_dequeue=min_queue_example
+                capacity=min_queue_example+3*BATCH_SIZE,
+                min_after_dequeue=min_queue_example,
                 )
     else:
         images,label= tf.train.batch(
                 [fimg,read_input.finelabel],
-                batch_size=batch_size,
+                batch_size=BATCH_SIZE,
                 num_threads=Num_process_thread,
-                capacity=min_queue_example+3*batch_size,
+                capacity=min_queue_example+3*BATCH_SIZE,
                 )
     tf.summary.image('images',images)
-    return images,tf.reshape(label,[batch_size])
+    return images,tf.reshape(label,[BATCH_SIZE])
 
 #-----------------------purning model--------------------------  
 def _activate_summary(x):
@@ -198,43 +178,22 @@ def _variable_on_cpu(name,shape,initializer):
     return var
 
 def _variable_with_weight_decay(name,shape,stddv,wd):
-    """ 变量的正则化，也就是权重衰减，主要目的为了防止过拟合  ---?
-    Note that the Variable is initializer with a truncated normal distribution a weight decay is added only if one is specified
-    注意,初始化变量的时候, 权重衰减采用截断正太分布 如果 被指定了
-    :param name: 变量名
-    :param shape: shape
-    :param stddv: 高斯分布的偏差
-    :param wd:add L2loss weight decay  multiplied by this float, if none,weight decay is not added for variable 添加一个l2正则化的衰减值
-    :return:variable    tensor 变量
 
-    Note that the variable is initialized with truncated normal distribution. 注意这个变量的初始化采用高斯分布
-    a weight decay is add only if one is specified    只有当被指定的时候,采用正则化
-
-    wd 用于向loss添加L2正则化，防止过拟合，提高泛化能力
-    """
     var=_variable_on_cpu(name,shape,tf.truncated_normal_initializer(stddev=stddv,dtype=tf.float32))
     if wd is not None:
         weight_decay=tf.multiply(tf.nn.l2_loss(var),wd,name='weight_loss')
         tf.add_to_collection('loss',weight_decay)
     return var
 
-def model_image_input(data_dir,shuffle=True,isEval=False,ispy=True,readid=1,BATCH_SIZE=64):
+def model_image_input(data_dir_py,shuffle=True,Num_process_thread=16):
     """读入图片和标签
     为了获取训练和预测图片输入
     """
-    images,labels=distored_input(data_dir,shuffle,BATCH_SIZE,isEval,ispy,readid)
+    images,labels=distored_input(data_dir_py,shuffle,Num_process_thread=16)
     return images,labels
 
 def inference(images):
-    """
-    开始构建模型
-    :param images: 从input方法中取得的labels
-    :return: 未归一化，一般是softmax的输入
-    我们实例化所有的变量的，采用tf.get_variable() 方法代替 tf.variable() ,这样做的目的是载多GPU训练的情况下共享变量
-    但是我们只只是在单GPU的模式下进行训练，我们倾向于使用tf.variable() 代替tf.get_variable()来简化。
-    当卷积和全链接层 实例化之后。我们将抑制和阈值变量加入层 通过 调用purning.applt_mask() function
-    注意：mask只有正则化的时候，才会应用
-    """
+    
     # 卷积层1
     with tf.variable_scope('conv1') as scope:  # test 使用 get_variable代替variable() 方法
         kernel=_variable_with_weight_decay('weights',shape=[5,5,odepth,64],stddv=0.05,wd=0.0) #卷积核
@@ -282,6 +241,7 @@ def inference(images):
 def loss(logits,labels):
     labels=tf.cast(labels,tf.int64) # 方便输入
     cross_entropy=tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels,logits=logits,name='cross_entropy_per_example')
+    print(cross)
     cross_entropy_mean=tf.reduce_mean(cross_entropy,name='cross_entropy') # 计算整个批次的交叉熵
     tf.add_to_collection('losses',cross_entropy_mean) #获取的交叉熵损失  加入到变量集合
     return tf.add_n(tf.get_collection('losses'),name='total_loss')  #   tf.add_n实现列表元素相加
@@ -334,27 +294,19 @@ def train(total_loss,global_step):
 def model_train():
     with tf.Graph().as_default():
         global_step=tf.contrib.framework.get_or_create_global_step() #获取全局变量
-        images,labels=model_image_input(data_dir_py,False,False,True,2) # 获取图片数据
+        images,labels=model_image_input(data_dir,True,Num_process_thread=16) # 获取图片数据
         logits=inference(images)#生成前向传播模型
         
         losses=loss(logits,labels) #计算损失值
 
         train_op=train(losses,global_step) #训练模型并更新参数
-        #模型修剪  
-        # Parse pruning hyperparameters
+
         pruning_hparams = pruning.get_pruning_hparams().parse(FLASS.pruning_hparams)
 
-        # Create a pruning object using the pruning hyperparameters
         pruning_obj = pruning.Pruning(pruning_hparams, global_step=global_step)
 
-        # Use the pruning_obj to add ops to the training graph to update the masks
-        # The conditional_mask_update_op will update the masks only when the
-        # training step is in [begin_pruning_step, end_pruning_step] specified in
-        # the pruning spec proto
         mask_update_op = pruning_obj.conditional_mask_update_op()
 
-        # Use the pruning_obj to add summaries to the graph to track the sparsity
-        # of each of the layers
         pruning_obj.add_pruning_summaries()
 
         class _LoggerHook(tf.train.SessionRunHook):
@@ -431,8 +383,6 @@ def main(argv=None):
     tf.gfile.MakeDirs(FLASS.train_dir)
     model_train()
 
-
-
 #---------------------system test---------------------------------
 def temp():
     pass
@@ -478,7 +428,7 @@ def test(x):
         return sess.run(x)     
 #------------------------------脚本程序的运行入口-----------------------------
 print('运行前，请检查参数列表的值是不是正确')
-main()
+#main()
 def model_train_main():
    tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
    pass

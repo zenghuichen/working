@@ -35,7 +35,7 @@ import numpy as np
 
 data_dir_py=r'E:\intelligentcity\example\tf_car_license_dataset\train_images\train-set'
 tddir=r'E:\intelligentcity\example\tfrecord\train.tf'
-
+filename=tddir
 #-------------------local variable-------------------------------------------
 width=32
 height=40
@@ -152,6 +152,6 @@ def read_tfrecord(filename):
 
     image, label = tf.train.batch([image, label],
             batch_size=32,
-            capacity=800)
+            capacity=900)
 
     return image, label    
