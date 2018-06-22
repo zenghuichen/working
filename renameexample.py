@@ -32,7 +32,7 @@ from functools import reduce # 输出log
 from PIL import Image
 datalabel=r'E:\intelligentcity\example\tf_car_license_dataset\labelimg.txt'
 dataset=r"E:\intelligentcity\example\tf_car_license_dataset\train_images"
-
+datasrc=r'E:\intelligentcity\example\jianceng\02'
 
 
 def unpickle(file): # 用于读取cifar100-python
@@ -83,37 +83,40 @@ def CreateList(filepath):
 
 def logdsss():
     topicsrc=r'E:\intelligentcity\example\tf_car_license_dataset\train_images\train-set'
-    tosrc=r'E:\intelligentcity\example\tf_car_license_dataset\train_images\training-set\letters'
+    tosrc=r'E:\intelligentcity\example\jianceng'
     tslist=[]
-    tslist.append({'s':10,'t':11})
-    tslist.append({'s':11,'t':12})
-    tslist.append({'s':12,'t':13})
-    tslist.append({'s':13,'t':14})
-    tslist.append({'s':14,'t':15})
-    tslist.append({'s':15,'t':16})
-    tslist.append({'s':16,'t':17})
-    tslist.append({'s':17,'t':18})
-    tslist.append({'s':18,'t':20})
-    tslist.append({'s':19,'t':21})
-    tslist.append({'s':20,'t':22})
-    tslist.append({'s':21,'t':23})
-    tslist.append({'s':22,'t':24})
-    tslist.append({'s':23,'t':26})
-    tslist.append({'s':24,'t':27})
-    tslist.append({'s':25,'t':28})
-    tslist.append({'s':26,'t':29})
-    tslist.append({'s':27,'t':30})
-    tslist.append({'s':28,'t':31})
-    tslist.append({'s':29,'t':32})
-    tslist.append({'s':30,'t':33})
-    tslist.append({'s':31,'t':34})
-    tslist.append({'s':32,'t':35})
-    tslist.append({'s':33,'t':36})
-    tslist.append({'s':34,'t':2})
-    tslist.append({'s':35,'t':1})
+    tslist.append({'s':'02','t':42})
+    tslist.append({'s':'03','t':43})
+    tslist.append({'s':'04','t':44})
+    tslist.append({'s':'05','t':45})
+    tslist.append({'s':'06','t':46})
+    tslist.append({'s':'07','t':48})
+    tslist.append({'s':'08','t':52})
+    tslist.append({'s':'09','t':54})
+    tslist.append({'s':10,'t':55})
+    tslist.append({'s':11,'t':56})
+    tslist.append({'s':12,'t':58})
+    tslist.append({'s':13,'t':60})
+    tslist.append({'s':14,'t':61})
+    tslist.append({'s':15,'t':67})
+    tslist.append({'s':16,'t':68})
+    tslist.append({'s':17,'t':75})
+    tslist.append({'s':18,'t':71})
+    tslist.append({'s':19,'t':62})
+    tslist.append({'s':20,'t':63})
+    tslist.append({'s':21,'t':64})
+    tslist.append({'s':22,'t':65})
+    tslist.append({'s':23,'t':66})
+    tslist.append({'s':24,'t':72})
+    tslist.append({'s':25,'t':73})
+    tslist.append({'s':26,'t':47})
+    tslist.append({'s':27,'t':57})
+    tslist.append({'s':28,'t':76})
+    tslist.append({'s':29,'t':74})
     
     for tmp in tslist:
         osrc=os.path.join(tosrc,str(tmp['s']))
+        print(tmp)
         dlist=os.listdir(osrc)
         oimglist=list(map(lambda x:os.path.join(osrc,x),dlist))
         j=0
@@ -126,6 +129,7 @@ def logdsss():
             
 topicsrc=r'E:\intelligentcity\example\tf_car_license_dataset\train_images\train-set'
 #完成字符解析和大类处理
+
 dlist=os.listdir(topicsrc)
 relist=[]
 j=0
@@ -157,3 +161,5 @@ for tmp in relist:
     oname=os.path.join(topicsrc,tmp['s'])
     rname=os.path.join(topicsrc,tmp['r'])
     os.rename(oname,rname)
+
+print('over')

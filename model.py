@@ -44,7 +44,7 @@ labelbytes=2# 2 for CIFAR-100
 olabel=1
 Image_crop_h=40
 Image_crop_w=32
-NUM_EXAMPLE_TRAIN=9519
+NUM_EXAMPLE_TRAIN=11423
 NUM_EXAMPLE_EVAL=98
 MIN_FRACTION=1
 min_queue_example=int(NUM_EXAMPLE_TRAIN*MIN_FRACTION)
@@ -378,8 +378,7 @@ FLASS,unparsed = init_FLASS()
 def main(argv=None):
     FLASS, unparsed =init_FLASS()
     if tf.gfile.Exists(FLASS.train_dir):
-        
-         tf.gfile.Rename
+        tf.gfile.DeleteRecursively(FLAGS.eval_dir)
     tf.gfile.MakeDirs(FLASS.train_dir)
     model_train()
 

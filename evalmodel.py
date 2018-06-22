@@ -110,7 +110,7 @@ def evaluate():
                 break
             time.sleep(FLAGS.eval_interval_secs)
 
-def main(argv=None):  # pylint: disable=unused-argument
+def evalmain(argv=None):  # pylint: disable=unused-argument
   if tf.gfile.Exists(FLAGS.eval_dir):
     tf.gfile.DeleteRecursively(FLAGS.eval_dir)
   tf.gfile.MakeDirs(FLAGS.eval_dir)
