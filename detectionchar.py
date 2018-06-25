@@ -26,7 +26,7 @@ Eval_dir='/home/chen/文档/mygithub/mycode/cifar100/eval'
 log_dir='/home/chen/文档/mygithub/mycode/cifar100/log'
 
 #参数设置
-cifar10.BATCH_SIZE=1
+
 
 def logout(x):
     if not tf.gfile.Exists(log_dir):
@@ -38,9 +38,10 @@ def logout(x):
     f.write('\n'+str(x))
     f.close()
 
-def eval_once(image):
+def eval_once(image,num):
+    cifar10.BATCH_SIZE=num
     with tf.Graph().as_default() as g:
-        inputimage=tf.placeholder(tf.uint8,shape=[1,cifar10.odepth,cifar10.oheight,cifar10.owidth])
+        inputimage=tf.placeholder(tf.uint8,shape=[num,cifar10.odepth,cifar10.oheight,cifar10.owidth])
         iimage=tf.transpose(inputimage,[0,2,3,1])
         imaget=tf.cast(iimage,tf.float32)
         print(imaget.shape)
@@ -56,8 +57,10 @@ def eval_once(image):
             else:
                 print('NO checkpoint file found')
                 return
-            return sess.run(logit,
-                            feed_dict={inputimage:image})
+            t= sess.run(logit,feed_dict={inputimage:image})
+            for var in tf.trainable_variables():
+                print(var.name)
+            return t
 
 def insertTop5(b,i,v):
     if len(b) != 10:
@@ -87,12 +90,65 @@ def top5(a):
 
 
 def testimg(path):
+    num=len(imglist)
     img=Image.open(path)
+    img=img.resize([cifar10.oheight,cifar10.owidth])
     imgarr=np.array(img)
-    plt.imshow(imgarr)
+    print(imgarr.shape)
     imgarr=np.array([imgarr],dtype=np.int)
     imgarr=np.array([imgarr],dtype=np.int)
-    d=eval_once(imgarr)
+    d=eval_once(imgarr,num)
     t=top5(d[0,:])
-    print(t)
-    return d,t
+    plt.imshow(img)
+    plt.show()
+   # print(t)
+    tm=list(map(mapLabel,t))
+    print(tm[0])
+    return d,t,tm
+
+
+
+def mapLabel(x):
+    mp={0:'None',11:'A',21:'K',31:'U',41:'京',51:'浙',61:'琼',71:'藏',81:'分割符',
+        1:'0',12:'B',22:'L',32:'V',42:'津',52:'皖',62:'陕',72:'港',82:'',
+        2:'1',13:'C',23:'M',33:'W',43:'冀',53:'闽',63:'甘',73:'澳',83:'',
+        3:'2',14:'D',24:'N',34:'X',44:'晋',54:'赣',64:'青',74:'台',84:'',
+        4:'3',15:'E',25:'O',35:'Y',45:'蒙',55:'鲁',65:'宁',75:'云',85:'',
+        5:'4',16:'F',26:'P',36:'Z',46:'辽',56:'豫',66:'新',76:'贵' ,86:'',
+        6:'5',17:'G',27:'Q',37:' ',47:'吉',57:'鄂',67:'渝',77:' ' ,87:'',
+        7:'6',18:'H',28:'R',38:' ',48:'黑',58:'湘',68:'川',78:' ' ,88:'',
+        8:'7',19:'I',29:'S',39:' ',49:'沪',59:'粤',69:'黔',79:' ' ,89:'',
+        9:'8',20:'J',30:'T',40:' ',50:'苏',60:'桂',70:'滇',80:' ' ,90:'',
+        10:'9'}
+    result=mp[x]
+    return result.replace(' ','')
+
+
+
+path=r'/home/chen/working/data/example/tf_car_license_dataset/test_images'
+imgs=os.listdir(path)
+pathlist=list(map(lambda x:os.path.join(path,x),imgs))
+imglist=[]
+i=pathlist[0]
+img=Image.open(i)
+img=img.resize([cifar10.owidth,cifar10.oheight])
+imgarr=np.array(img)
+imgarr=np.array([imgarr],dtype=np.int)
+imglist.append(imgarr)
+imgs=np.array(imglist)
+num=len(imglist)
+d=eval_once(imgs,num)
+# data map to label
+if d.shape[0]==imgs.shape[0]:
+    i=0
+    while i<imgs.shape[0]:
+        li=d[i,:]
+        imgi=imgs[i,0,:,:]
+        t=top5(li)
+        print(t)
+        tm=list(map(mapLabel,t))
+        print(tm)
+        plt.imshow(imgi)
+        plt.show()
+        i=i+1
+        
