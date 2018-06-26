@@ -36,7 +36,7 @@ from PIL import Image
 #the paremeter for read image and label
 #data_dir='/home/chen/data/data/cifar-100-binary'
 labelsnametxt='metatxt.txt'
-data_dir=r'E:\intelligentcity\example\tf_car_license_dataset\train_images\train-set'
+data_dir=r'/home/chen/working/data/example/tf_car_license_dataset/train_images/train-set'
 odepth=1
 owidth=32
 oheight=40
@@ -52,7 +52,7 @@ min_queue_example=int(NUM_EXAMPLE_TRAIN*MIN_FRACTION)
 
 #-set the hyperparameter of model
 
-BATCH_SIZE=256
+BATCH_SIZE=512
 NUM_CLASS=90
 NUM_EXAMPLES_PER_EPOCH_FOR_TRIAN=NUM_EXAMPLE_TRAIN
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL=NUM_EXAMPLE_EVAL
@@ -62,8 +62,8 @@ learning_rate_decay_factor=0.0001 #学习率衰减因子
 num_epoch_per_decay=350.0 # 衰减成阶梯函数，控制衰减周期（阶梯宽度）
 TOWER_NAME='tower'
 # in variable
-Checkoutpointdir=r'E:\intelligentcity\train'
-log_dir=r'E:\home\chen\文档\mygithub\mycode\cifar100\log'
+Checkoutpointdir=r'/home/chen/log/modelchkpt'
+log_dir=r'/home/chen/log/log'
 
 Max_step=1000000
 FLASS=None
@@ -90,7 +90,7 @@ def _createqueue(data_dir):
 
 def parsename(k,gc=1):
     k=tf.reshape(k,shape=[1])
-    d=tf.string_split(k,delimiter='\\')
+    d=tf.string_split(k,delimiter='/')
     d=d.values[-1]
     d=tf.reshape(d,shape=[1])
     d=tf.string_split(d,delimiter='.')
@@ -127,10 +127,7 @@ def distored_input(data_dir,shuffle=True,Num_process_thread=16):
     height=Image_crop_h
     width=Image_crop_w
     #  图片处理
-       
-    fimg=tf.random_crop(fimg,[height,width,odepth])  #图片裁剪
-    fimg=tf.image.random_brightness(fimg,63)   # 随机亮度饱和
-    fimg=tf.image.per_image_standardization(fimg)  #图片标准化
+     
     fimg.set_shape([height,width,odepth])
     read_input.finelabel.set_shape([1])
     print('gilling queue with %d image ' % min_queue_example)
@@ -154,25 +151,14 @@ def distored_input(data_dir,shuffle=True,Num_process_thread=16):
 
 #-----------------------purning model--------------------------  
 def _activate_summary(x):
-    """
-    创建一个直方图,创建一个稀疏矩阵
-    :param x:tensor
-    :return:nothing
-    """
+
     tensor_name=re.sub('%s_[0-9]*/'%TOWER_NAME,'',x.op.name)  #若多个GPU训练，则从名称中删除，利于tensorboard显示
     tf.summary.histogram(tensor_name+'/activations',x) # 提供激活直方图
     tf.summary.scalar(tensor_name+'/sparsity',tf.nn.zero_fraction(x)) # 提供激活稀疏行
 
 def _variable_on_cpu(name,shape,initializer):
-    """
 
-    :param name:变量名
-    :param shape: list of ints
-    :param initializer: 变量的初始化
-    :return:
-     variable tensor
-    """
-    with tf.device('/gpu:0'):
+    with tf.device('/cpu:0'):
         dtype=tf.float32
         var = tf.get_variable(name,shape,initializer=initializer,dtype=dtype)
     return var
@@ -378,7 +364,7 @@ FLASS,unparsed = init_FLASS()
 def main(argv=None):
     FLASS, unparsed =init_FLASS()
     if tf.gfile.Exists(FLASS.train_dir):
-        tf.gfile.DeleteRecursively(FLAGS.eval_dir)
+        tf.gfile.DeleteRecursively(FLASS.train_dir)
     tf.gfile.MakeDirs(FLASS.train_dir)
     model_train()
 
