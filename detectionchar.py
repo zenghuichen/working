@@ -58,7 +58,7 @@ def eval_once(image,num):
                 print('NO checkpoint file found')
                 return
             t= sess.run(logit,feed_dict={inputimage:image})
-<<<<<<< HEAD
+
             oplist=[]
             for var in tf.trainable_variables():
                 print(var.name)
@@ -72,11 +72,8 @@ def eval_once(image,num):
             print(conv1)
             convsess=sess.run(conv1,feed_dict={inputimage:image})
             return t,convsess
-=======
-            for var in tf.trainable_variables():
-                print(var.name)
-            return t
->>>>>>> 1033ca4532641b7f8e087332e53f4a56d5059a7e
+
+
 
 def insertTop5(b,i,v):
     if len(b) != 10:
@@ -153,11 +150,8 @@ imgarr=np.array([imgarr],dtype=np.int)
 imglist.append(imgarr)
 imgs=np.array(imglist)
 num=len(imglist)
-<<<<<<< HEAD
 d,conv1v=eval_once(imgs,num)
-=======
-d=eval_once(imgs,num)
->>>>>>> 1033ca4532641b7f8e087332e53f4a56d5059a7e
+
 # data map to label
 if d.shape[0]==imgs.shape[0]:
     i=0
@@ -165,15 +159,9 @@ if d.shape[0]==imgs.shape[0]:
         li=d[i,:]
         imgi=imgs[i,0,:,:]
         t=top5(li)
-<<<<<<< HEAD
-       # print(t)
-        tm=list(map(mapLabel,t))
-        print(tm[0])
-=======
-        print(t)
         tm=list(map(mapLabel,t))
         print(tm)
->>>>>>> 1033ca4532641b7f8e087332e53f4a56d5059a7e
+
         plt.imshow(imgi)
         plt.show()
         i=i+1
