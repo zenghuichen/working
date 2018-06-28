@@ -18,7 +18,7 @@ import os
 import numpy as np
 import tensorflow as tf
 sys.path.append(r'E:\githubcode\cifar100')
-#专门用来还原的模型结构
+#加载原有的模型结构
 import model as cifar10
 
 FLAGS=None #方便管理其中的结点
