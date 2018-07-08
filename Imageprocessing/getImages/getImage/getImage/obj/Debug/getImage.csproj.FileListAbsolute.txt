@@ -1,0 +1,7 @@
+E:\working\buildingSample\Imageprocessing\getImages\getImage\getImage\bin\Debug\getImage.exe.config
+E:\working\buildingSample\Imageprocessing\getImages\getImage\getImage\bin\Debug\getImage.exe
+E:\working\buildingSample\Imageprocessing\getImages\getImage\getImage\bin\Debug\getImage.pdb
+E:\working\buildingSample\Imageprocessing\getImages\getImage\getImage\obj\Debug\getImage.csprojAssemblyReference.cache
+E:\working\buildingSample\Imageprocessing\getImages\getImage\getImage\obj\Debug\getImage.csproj.CoreCompileInputs.cache
+E:\working\buildingSample\Imageprocessing\getImages\getImage\getImage\obj\Debug\getImage.exe
+E:\working\buildingSample\Imageprocessing\getImages\getImage\getImage\obj\Debug\getImage.pdb

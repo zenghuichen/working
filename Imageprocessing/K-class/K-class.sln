@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2035
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "K-class", "K-class.pyproj", "{6A4944A3-ACD3-4B58-96E2-9E0FA21F2103}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6A4944A3-ACD3-4B58-96E2-9E0FA21F2103}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A4944A3-ACD3-4B58-96E2-9E0FA21F2103}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DE306CFD-ED10-49EF-9EB7-BB8238AF1BF1}
+	EndGlobalSection
+EndGlobal
