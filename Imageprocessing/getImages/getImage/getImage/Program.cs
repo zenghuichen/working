@@ -17,13 +17,14 @@ namespace getImage
             FileStream fs = new FileStream(urllist.boxsyepath, FileMode.Open, FileAccess.Read);
             StreamReader sr = new StreamReader(fs);
             string r1 = "";
-            while (r1!=null)
+            while (true)
             {
                 r1 = sr.ReadLine();
-                Console.Write(r1);
+                if (r1 == null) break;
+                int i = ImageUpDown.getxxxx(r1);
+                Console.Write(i.ToString());
             }
             Console.WriteLine(r1);
-
             sr.Close();
             fs.Close();
             Console.ReadLine();
@@ -47,19 +48,21 @@ namespace getImage
             FileStream fs = new FileStream(urllist.boxsyepath, FileMode.Open, FileAccess.Read);
             StreamReader sr = new StreamReader(fs);
             string r1 = "";
-            while (r1 != null)
+            while (true)
             {
                 r1 = sr.ReadLine();
-                Console.Write(r1);
+                if (r1 == null) break;
+                int i = getxxxx(r1);
             }
             sr.Close();
             fs.Close();
             return list;
         }
-        public int getxxxx(string xxxx)
+        public static int getxxxx(string xxxx)
         {
             int i = 0;
             string num = xxxx.Trim().Substring(1);
+            i = int.Parse(num);
             return i;
         }
        
@@ -78,7 +81,3 @@ namespace getImage
     }
 
 }
-
-
-
-
