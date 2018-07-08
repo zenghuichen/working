@@ -29,6 +29,14 @@ from PIL import Image as Image
 import scipy.signal as signal
 #程序主入口
 
+im=Image.open(r'./l8.jpg')
+#下面主要开始试验
+#拉普拉斯算子的结果
+laplacianKernel=np.array([[0,1,0],[1,-4,1],[0,1,0]],dtype=np.float)
+imarr=np.array(im,dtype=np.float)
+i_con=signal.convolve2d(imarr[:,:,0],laplacianKernel*10,mode='valid',boundary='fill',fillvalue=0)
+plt.imshow(i_con)
+plt.show()
 def maintest():
     im=Image.open(r'./l8.jpg')
     #下面主要开始试验
@@ -38,6 +46,21 @@ def maintest():
     i_con=signal.convolve2d(imarr[:,:,0],laplacianKernel*10,mode='valid',boundary='fill',fillvalue=0)
     plt.imshow(i_con)
 # 在原有图片矩阵的基础上完成了相关运算的加载，注意，这里使用tensorflow的方案
+def createLOGKernel(sigma,size):
+    H,W=size
+    r,c=np.mgrid[0:H:1,0:W:1]
+    r=r-(H-1)/2
+    c=c-(W-1)/2
+    #方差
+    sigma2=pow(sigma,2.0)
+    norm2=np.power(r,2.0)+np.power(c,2.0)
+    LOGKernel=(norm2/sigma2-2)*np.exp(-norm2/(2*sigma2))
+    return LOGKernel
+
+def LoG(image,sigma,size,_boundary='symm',_mode='valid'):
+    loGKernl=createLOGKernel(sigma,size)
+    im_log=signal.convolve2d(image,loGKernl,mode=_mode,boundary=_boundary)
+    return im_log
 def ImgProProcessing(path):
     im=Image.open(path)
     #先进行边缘滤波
