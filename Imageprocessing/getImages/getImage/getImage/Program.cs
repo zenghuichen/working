@@ -77,7 +77,6 @@ namespace getImage
             {
                 t = t + 1;
                 index = t % 4000;
-                i = i + 1;
             }
             if (this.list[index] == null) return -1;
             if (this.list[index] == n) return index;
