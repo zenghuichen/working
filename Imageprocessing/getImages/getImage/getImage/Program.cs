@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,36 +12,65 @@ namespace getImage
 {
     class Program
     {
-       
+        static Thread main_th;
+        static Thread read_th;//读取文件的线程
+        static Thread log_th;
+        static ArrayList list;//等待下载的文件
+        static ArrayList loglist;//等待输出到log队列
         static void Main(string[] args)
         {
             ImageUpDown down = new ImageUpDown();
-            //开始测试读取和分类文件
-            down.CreateNlist();//创建待选列表
-            FileStream fs = new FileStream(Urllist.fall11path, FileMode.Open, FileAccess.Read);
+            //开始下载文件
+            log_th = new Thread(Logtext);
+            down.CreateNlist();
+            for (int i = 0; i < down.Length; i++)
+            {
+                if (down[i] == null) continue;
+                string temp = down[i];
+                DirectoryImage.CreateDataDir(temp);
+            }
+
+            Console.WriteLine("程序完成");
+            Console.ReadLine();
+        }
+        public static void Main_d()
+        {
+            
+
+
+        }
+        public static void Readtxt()
+        {
+            FileStream fs = new FileStream(Urllist.indexpath + "main", FileMode.OpenOrCreate, FileAccess.ReadWrite);
             StreamReader sr = new StreamReader(fs);
-            FileStream ifs = DirectoryImage.CreateIndex("main");
-            StreamWriter isr = new StreamWriter(ifs);
             string temp = "";
-            int index = -1;
             while (temp != null)
             {
                 temp = sr.ReadLine();
-                Meta meta = ImageUpDown.GetMetas(temp);
-                //判定这个对象
-                index = down.Find(meta.Synerl);
-                if (index == -1) continue;
-                if (down[index] == meta.Synerl)//表示找到需要将其提取出来
-                {
-                    isr.WriteLine(meta.Print());
-                }
+                if (temp == null) break;
+                
             }
-            isr.Close();
-            ifs.Close();
+
             sr.Close();
             fs.Close();
-            Console.ReadLine();
         }
+        //
+        public static void Logtext()
+        {
+            
+            FileStream fs = new FileStream(Urllist.mainurl+"log.txt",FileMode.OpenOrCreate,FileAccess.ReadWrite);
+            StreamWriter sw = new StreamWriter(fs);
+            while (loglist.Count != 0)
+            {
+                string d = loglist[0].ToString();
+                sw.WriteLine(d);
+                loglist.RemoveAt(0);
+            }
+            sw.Close();
+            fs.Close();
+        }
+
+
     }
 
     public class ImageUpDown
@@ -56,9 +86,11 @@ namespace getImage
             meta.Synerl = nName[0];
             meta.id = nName[1];
             meta.url = vs[1];
+            meta.path = meta.Synerl + "\\images" + meta.id + ".jpg";
             return meta;
         }
         string[] list=new string[4000];
+        public int Length { get { return 4000; } }
         public string GetOne(FileStream fs)
         {
             string result = "";
@@ -123,7 +155,7 @@ namespace getImage
         public static ArrayList CreateDataDir(string Filename)
         {
             ArrayList result = new ArrayList();
-            string impath = Urllist.datapath + "\\" + Filename + "\\" + "image";//image
+            string impath = Urllist.datapath + "\\" + Filename + "\\" + "images";//image
             string annnotpath = Urllist.datapath + "\\" + Filename + "\\" + "annotion";//box
             DirectoryInfo info1 = System.IO.Directory.CreateDirectory(impath); result.Add(info1);
             DirectoryInfo info2 = System.IO.Directory.CreateDirectory(annnotpath); result.Add(info2);
@@ -165,6 +197,7 @@ namespace getImage
         public static string boxsyepath = @"E:\data\imagenet\imagenet_fall11_urls\boxlist.txt";
         public static string datapath = @"E:\data\imagenet\imagenet_fall11_urls\data";//数据文件---》图片
         public static string indexpath = @"E:\data\imagenet\imagenet_fall11_urls\index";//索引文件夹
+        public static string mainurl = @"E:\data\imagenet\imagenet_fall11_urls";
     }
 
 }
