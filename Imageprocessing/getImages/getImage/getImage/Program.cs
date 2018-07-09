@@ -3,76 +3,177 @@ using System.IO;
 using System.Collections;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.Net;
 namespace getImage
 {
     class Program
     {
-        static Thread main_th;
-        static Thread read_th;//读取文件的线程
-        static Thread log_th;
-        static ArrayList list;//等待下载的文件
-        static ArrayList loglist;//等待输出到log队列
+
         static void Main(string[] args)
         {
-            ImageUpDown down = new ImageUpDown();
-            //开始下载文件
-            log_th = new Thread(Logtext);
-            down.CreateNlist();
-            for (int i = 0; i < down.Length; i++)
-            {
-                if (down[i] == null) continue;
-                string temp = down[i];
-                DirectoryImage.CreateDataDir(temp);
-            }
-
-            Console.WriteLine("程序完成");
+            MuiltThreadDown muiltThreadDown = new MuiltThreadDown();
+            muiltThreadDown.main_d();
             Console.ReadLine();
-        }
-        public static void Main_d()
-        {
-            
-
-
-        }
-        public static void Readtxt()
-        {
-            FileStream fs = new FileStream(Urllist.indexpath + "main", FileMode.OpenOrCreate, FileAccess.ReadWrite);
-            StreamReader sr = new StreamReader(fs);
-            string temp = "";
-            while (temp != null)
-            {
-                temp = sr.ReadLine();
-                if (temp == null) break;
-                
-            }
-
-            sr.Close();
-            fs.Close();
-        }
-        //
-        public static void Logtext()
-        {
-            
-            FileStream fs = new FileStream(Urllist.mainurl+"log.txt",FileMode.OpenOrCreate,FileAccess.ReadWrite);
-            StreamWriter sw = new StreamWriter(fs);
-            while (loglist.Count != 0)
-            {
-                string d = loglist[0].ToString();
-                sw.WriteLine(d);
-                loglist.RemoveAt(0);
-            }
-            sw.Close();
-            fs.Close();
         }
 
 
     }
 
+    public class MuiltThreadDown
+    {
+        Thread read_th;//读取文件的线程
+        Thread log_th;
+        MOList<Meta> list = new MOList<Meta>();
+        MOList<string> loglist = new MOList<string>();//等待输出到log队列
+        bool reading = true;
+        bool downing = true;
+        bool logging = true;
+        public void Readtxt()
+        {
+            FileStream fs = new FileStream(Urllist.indexpath + "\\main", FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            StreamReader sr = new StreamReader(fs);
+            string temp = "";
+            while (temp != null)
+            {
+                reading = true;
+                temp = sr.ReadLine();
+                if (temp == null) break;
+                string[] vs = temp.Split(',');
+                Meta meta = new Meta(vs[0], vs[1], vs[2], vs[3]);
+                while (list.Push(meta) <= 0){ }
+
+            }
+            sr.Close();
+            fs.Close();
+            reading = false;
+        }
+        public void Loadtxt()
+        {
+            while (!list.isEmpty())
+            {
+                downing = true;
+                Meta meta = null;
+                lock (this)
+                {
+                    meta = list.Pop();
+                }
+                //在线下载图片并输出到指定的文件夹中的
+                downFile(meta);
+
+            }
+            downing = false;
+        }
+        public int downFile(Meta meta)
+        {
+            try
+            {
+                WebRequest request = WebRequest.Create(meta.url);
+                WebResponse response = request.GetResponse();
+                Stream reader = response.GetResponseStream();
+                string path = Urllist.datapath + "\\"+meta.path;
+                FileStream writer = new FileStream(path, FileMode.OpenOrCreate, FileAccess.Write);
+                byte[] buff = new byte[1024*5];
+                int c = 0; //实际读取的字节数
+                bool hasdata = false;
+                while ((c = reader.Read(buff, 0, buff.Length)) > 0)
+                {
+                    writer.Write(buff, 0, c);
+                    hasdata = true;
+                }
+                writer.Close();
+                if (!hasdata)
+                {
+                    loglist.Push(meta.Print()+","+"没有收到数据");
+                }
+                return 1;
+            }
+            catch(Exception ex)
+            {
+                loglist.Push(meta.Print()+","+ex.Message.ToString());
+            }
+            return -1;
+        }
+        public void Logtext()
+        {
+            string path = Urllist.mainurl + "\\log.txt";
+            StreamWriter sw = null;
+            if (!File.Exists(path))
+            {
+                FileStream fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                fs.Close();
+            }
+            sw = new StreamWriter(path, true);
+            while (!loglist.isEmpty())
+            {
+                logging = true;
+                string d = loglist.Pop();
+                sw.WriteLine(d);
+            }
+            sw.Close();
+            logging = false;
+        }
+        public void main_d()
+        {
+            //参数初始化
+            ImageUpDown down = new ImageUpDown();
+            read_th = new Thread(Readtxt);
+            log_th = new Thread(Logtext);
+            Thread[] downs = new Thread[10];
+            read_th.Start();
+            log_th.Start();
+            //开始下载文件
+            while (reading || downing || logging) 
+            {
+                for (int i = 0; i < downs.Length; i++)
+                {
+                        if (downs[i]==null || downs[i].ThreadState == ThreadState.Stopped)
+                        {
+                            downs[i] = new Thread(Loadtxt);
+                            downs[i].Start();
+                        }
+                }
+
+                if (!logging)
+                {
+                    if (log_th.ThreadState == ThreadState.Stopped)
+                    {
+                        log_th = new Thread(Logtext);
+                        log_th.Start();
+                    }
+                }
+            }
+            //清理一波小尾巴
+            Console.WriteLine("线程挂起");
+            Thread.Sleep(1000);
+            Console.WriteLine("线程重载");
+            if (!list.isEmpty())
+            {
+                for (int i = 0; i < downs.Length; i++)
+                {
+                    if (downs[i] == null || downs[i].ThreadState == ThreadState.Stopped)
+                    {
+                        downs[i] = new Thread(Loadtxt);
+                        downs[i].Start();
+                    }
+                }
+            }
+            if (!loglist.isEmpty())
+            {
+                if (log_th.ThreadState == ThreadState.Stopped)
+                {
+                    log_th = new Thread(Logtext);
+                    log_th.Start();
+                }
+            }
+            Console.WriteLine("\n程序完成");
+        }
+    }
     public class ImageUpDown
     {
         public const int step =1;
@@ -180,6 +281,13 @@ namespace getImage
             this.url = "";
             this.path = "*";
         }
+        public Meta(string s, string i, string u, string p)
+        {
+            this.Synerl = s;
+            this.id = i;
+            this.url = u;
+            this.path = p;
+        }
         public string Print()
         {
             return this.Synerl + "," + this.id + "," + this.url + "," + this.path;
@@ -198,6 +306,51 @@ namespace getImage
         public static string datapath = @"E:\data\imagenet\imagenet_fall11_urls\data";//数据文件---》图片
         public static string indexpath = @"E:\data\imagenet\imagenet_fall11_urls\index";//索引文件夹
         public static string mainurl = @"E:\data\imagenet\imagenet_fall11_urls";
+    }
+    public class MOList<T>
+    {
+        T[] t;
+        int L = 0;
+        int H = 0;
+        public int Length;
+        public MOList()
+        {
+            t = new T[4000];
+        }
+        public int Push(T temp)
+        {
+            if (!isPush()) return -1;//表示不能添加
+            t[H++ %4000] = temp;
+            return H;
+        }
+        public T Pop()
+        {
+            Length--;
+            return t[L++ % 4000];
+        }
+        public bool isPush()
+        {
+            Length++;
+            if ((L % 4000) == (H + 1) % 4000)
+            {
+                return false;//表示队列已满
+            }
+            else
+            {
+                return true;//队列为空
+            }
+        }
+        public bool isEmpty()
+        {
+            if (L % 4000 == H % 4000)
+            {
+                return true;
+            }
+            else
+            {
+              return   false;
+            }
+        }
     }
 
 }
