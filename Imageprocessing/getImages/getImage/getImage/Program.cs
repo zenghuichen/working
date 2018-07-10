@@ -14,15 +14,12 @@ namespace getImage
 {
     class Program
     {
-
         static void Main(string[] args)
         {
             MuiltThreadDown muiltThreadDown = new MuiltThreadDown();
             muiltThreadDown.main_d();
             Console.ReadLine();
         }
-
-
     }
 
     public class MuiltThreadDown
@@ -124,7 +121,7 @@ namespace getImage
             ImageUpDown down = new ImageUpDown();
             read_th = new Thread(Readtxt);
             log_th = new Thread(Logtext);
-            Thread[] downs = new Thread[10];
+            Thread[] downs = new Thread[200];
             read_th.Start();
             log_th.Start();
             //开始下载文件
@@ -298,15 +295,6 @@ namespace getImage
     {
         
     }
-    public class Urllist
-    {
-        public static string boxurl = @"http://www.image-net.org/api/download/imagenet.bbox.synset?wnid=";
-        public static string fall11path = @"E:\data\imagenet\imagenet_fall11_urls\fall11_urls.txt";
-        public static string boxsyepath = @"E:\data\imagenet\imagenet_fall11_urls\boxlist.txt";
-        public static string datapath = @"E:\data\imagenet\imagenet_fall11_urls\data";//数据文件---》图片
-        public static string indexpath = @"E:\data\imagenet\imagenet_fall11_urls\index";//索引文件夹
-        public static string mainurl = @"E:\data\imagenet\imagenet_fall11_urls";
-    }
     public class MOList<T>
     {
         T[] t;
@@ -320,7 +308,7 @@ namespace getImage
         public int Push(T temp)
         {
             if (!isPush()) return -1;//表示不能添加
-            t[H++ %4000] = temp;
+            t[H++ % 4000] = temp;
             return H;
         }
         public T Pop()
@@ -348,9 +336,19 @@ namespace getImage
             }
             else
             {
-              return   false;
+                return false;
             }
         }
     }
+    public class Urllist
+    {
+        public static string boxurl = @"http://www.image-net.org/api/download/imagenet.bbox.synset?wnid=";
+        public static string fall11path = @"E:\data\imagenet\imagenet_fall11_urls\fall11_urls.txt";
+        public static string boxsyepath = @"E:\data\imagenet\imagenet_fall11_urls\boxlist.txt";
+        public static string datapath = @"E:\data\imagenet\imagenet_fall11_urls\data";//数据文件---》图片
+        public static string indexpath = @"E:\data\imagenet\imagenet_fall11_urls\index";//索引文件夹
+        public static string mainurl = @"E:\data\imagenet\imagenet_fall11_urls";
+    }
+
 
 }
