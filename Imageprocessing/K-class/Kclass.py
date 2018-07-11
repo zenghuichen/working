@@ -13,7 +13,7 @@ from __future__ import division
 from __future__ import print_function
 import os
 from six.moves import xrange  # pylint: disable=redefined-builtin
-import tensorflow as tf
+#import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 #the module of purning model
@@ -28,6 +28,7 @@ import cv2
 from PIL import Image as Image
 
 import scipy.signal as signal
+sys.stdout.write("环境类库加载完成\n\r")
 ##############################################################################################################
 
 
@@ -61,7 +62,46 @@ def sobel_v(image):
     i_con=signal.convolve2d(image,laplacianKernel*10,mode='valid',boundary='fill',fillvalue=0)
     return  i_con
 
+#膨胀
+def ImageDilate():
+    #结构元半径
+    r=1# 半径结构初始化
+    MAX_R=20# 最大的结构元半径
+    #展示膨胀效果的窗口
+    image=cv2.imread(r'./l8.jpg',cv2.IMREAD_GRAYSCALE)
 
+    cv2.namedWindow('sourceImage')
+    cv2.imshow('sourceImage',image)
+    cv2.namedWindow("dilate",1)
+    def nothing(*arg):
+        pass
+    cv2.createTrackbar("r","dilate",r,MAX_R,nothing)
+    while True:
+        r=cv2.getTrackbarPos("r","dilate")
+        s=cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2*r+1,2*r+1))
+        #膨胀图像
+        d=cv2.dilate(image,s)
+        i_log1=lapalcian(d)
+        plt.imshow(i_log1)
+        plt.show()
+        #显示膨胀结构
+        cv2.imshow('dilate',d)
+        ch=cv2.waitKey(5)
+        if ch==27:
+            break
+    cv2.destroyAllWindows()
+
+#腐蚀
+def ImageErode():
+    I=cv2.imread(r'./l8.jpg',cv2.IMREAD_GRAYSCALE)
+    S=cv2.getStructuringElement(cv2.MORPH_CROSS,(5,5))
+    r=cv2.erode(I,S)
+    e=I-r
+    cv2.imshow("I",I);
+    cv2.imshow("r",r)
+    cv2.imshow('e',e)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 #将输入的图片解析成相关的向量集 
 def getVectList(path):
     image=Image.open(path)
@@ -109,12 +149,16 @@ def getVectList(path):
 im=Image.open(r'./l8.jpg')# 读取图片
 imarr=np.array(im,dtype=np.float)
 i_con=lapalcian(imarr[:,:,0])
-plt.imshow(i_con)
-plt.show()
+#plt.imshow(i_con)
+#plt.show()
 i_log=LoG(imarr[:,:,0],6,(3,3))
-plt.imshow(i_log)
-plt.show()
+#plt.imshow(i_log)
+#plt.show()
 i_log1=lapalcian(i_log)
-plt.imshow(i_log1)
-plt.show()
+#plt.imshow(i_log1)
+#plt.show()
+
+#ImageExpand()  #膨胀
+ImageErode() #腐蚀
+
 ##############################################################################################################
