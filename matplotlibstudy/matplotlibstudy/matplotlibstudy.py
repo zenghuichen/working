@@ -40,16 +40,20 @@ plot.ylabel("Attribute3")
 #plot.show()
 
 # 数据集合的展示
-filepath=r"D:\BaiduYunDownload\TensorFlowDeeperLearningcode\data\dataTest.csv"
-dataFile= pd.read_csv(filepath,header=None, prefix="V")		
-target=[]
-for i in range(200):
-    if dataFile.iat[i,10] >=7:
-        target.append(1.0+uniform(-0.3,0.3))
+import pandas as pd			
+import os								
+import matplotlib.pyplot as plot									
+filePath = (r"E:\TensorFlowDeeperLearningcode\data\dataTest.csv")									
+dataFile = pd.read_csv(filePath,header=None, prefix="V")				
+
+target = []													
+for i in range(200):											
+    if dataFile.iat[i,10] >= 7:									
+        target.append(1.0 + uniform(-0.3, 0.3))					
     else:
-        target.append(0.0+uniform(-0.3,0.3))
-dataRows=dataFile.iloc[0:200,10]
-plot.scatter(dataRows,target,alpha=0.5,s=100)
-plot.xlabel("Attribute")
-plot.ylabel("Target")
-plot.show()
+        target.append(0.0 + uniform(-0.3, 0.3))					
+dataRow = dataFile.iloc[0:200,10]								
+plot.scatter(dataRow, target, alpha=0.5, s=100)						
+plot.xlabel("Attribute")										
+plot.ylabel("Target")											
+plot.show()	
